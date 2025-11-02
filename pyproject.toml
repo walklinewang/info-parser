@@ -1,0 +1,45 @@
+[project]
+name = "iparser"
+version = "0.0.0"
+description = ""
+authors = [
+    {name = "Walkline Wang",email = "walkline@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = "<3.14,>=3.10"
+dependencies = [
+    "jieba (>=0.42.1,<0.43.0)",
+    "confz (>=2.1.0,<3.0.0)"
+]
+
+[project.scripts]
+iparser = "iparser.__main__:main"
+
+[[tool.poetry.source]]
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple"
+priority = "primary"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pylint (>=4.0.2,<5.0.0)"
+]
+
+[tool.pylint.main]
+disable = [
+    "logging-fstring-interpolation",
+    "wrong-import-position",
+]
+
+[tool.pylint.format]
+expected-line-ending-format = "CRLF"
+indent-string = "\t"
+max-line-length = 88
+
+[tool.pylint.reports]
+output-format = "colorized"
