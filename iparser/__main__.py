@@ -1,0 +1,249 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+This file is part of the Info Parser project, https://github.com/walklinewang/info-parser
+The MIT License (MIT)
+Copyright © 2025 Walkline Wang <walkline@gmail.com>
+
+申请信息解析工具
+
+此工具提供了对申请人信息（如机构名称、姓名、身份等）的智能解析功能。
+主要功能包括机构名称识别、姓名提取和身份标识（教师/学生）。
+
+使用示例：
+
+from parser.__main__ import Applicant
+
+# 创建申请人对象
+applicant = Applicant('天津理工大学计算机科学与工程学院江小白学生')
+
+# 解析信息
+applicant.parse()
+
+# 获取解析结果
+print(f'输入：{applicant.origin_info}')
+print(f'机构：{applicant.institution}')
+print(f'姓名：{applicant.name}')
+print(f'身份：{'教师' if applicant.is_teacher else '学生'}')
+print(f'输出：{applicant.full_info}')
+
+示例输出：
+	输入：天津理工大学计算机科学与工程学院江小白学生
+	机构：天津理工大学
+	姓名：江小白
+	身份：学生
+	输出：天津理工大学-江小白
+"""
+from typing import List, Optional, Set
+
+import jieba
+
+from .config import Config
+from .logger import logger
+from .utils import update_jieba_keywords
+
+
+TEACHER_IDENTITY: Set[str] = set(Config().identity.teacher)
+STUDENT_IDENTITY: Set[str] = set(Config().identity.student)
+INSTITUTION_SUFFIXES: Set[str] = set(Config().institution.suffixes)
+
+
+class Applicant:
+	"""
+	申请人信息类
+
+	用于存储和处理申请人的信息，包括原始信息、清理后的信息、机构、姓名和身份标识。
+
+	Attributes:
+		origin_info: 原始申请信息字符串
+		info: 清理后的申请信息字符串（去除连接符）
+		institution: 识别出的机构名称
+		name: 识别出的申请人姓名
+		is_teacher: 身份标识，True表示教师，False表示学生（默认值）
+	"""
+	def __init__(self, info: str):
+		"""
+		初始化申请人对象
+
+		Args:
+			info: 原始申请信息字符串
+		"""
+		self.__origin_info: str = info
+		self.__info: str = info
+		self.__institution: Optional[str] = None
+		self.__name: Optional[str] = None
+		self.__is_teacher: bool = False
+
+		self.__clean_info()
+
+	def __str__(self):
+		"""返回格式化的申请人信息字符串"""
+		return self.full_info
+
+	def __clean_info(self):
+		"""
+		清理申请信息字符串
+
+		移除申请信息中的常见连接符和分隔符，为后续的分词和解析做准备。
+		"""
+		logger.debug(f'清理前的信息：{self.__info}')
+
+		for connector in set(Config().formatting.connectors):
+			self.__info = self.__info.replace(connector, '')
+
+		self.__info = self.__info.strip()
+		logger.debug(f'清理后的信息：{self.__info}')
+
+	def parse(self):
+		"""
+		智能解析申请信息
+
+		使用结巴分词和关键词匹配技术，从申请信息中提取机构名称、姓名和身份信息。
+		解析逻辑包括：
+		1. 初始化并配置结巴分词器
+		2. 对清理后的文本进行分词
+		3. 根据关键词识别机构名称
+		4. 提取机构名称后的部分作为姓名
+		5. 识别申请人身份（教师/学生）
+		"""
+		# 对清理后的文本进行分词
+		segments = jieba.lcut(self.__info)
+		logger.debug(f'分词结果: {segments}')
+
+		found_institution_end = False
+		institution_parts = []
+		name_parts = []
+
+		# 遍历分词结果，识别机构、姓名和身份
+		for segment in segments:
+			logger.debug(f'处理分词：{segment}')
+
+			# 识别机构
+			if not found_institution_end:
+				institution_parts.append(segment)
+				logger.debug(f'添加到机构部分：{segment}')
+
+				for keyword in INSTITUTION_SUFFIXES:
+					if keyword in segment:
+						found_institution_end = True
+						break
+
+			# 识别姓名
+			elif segment not in TEACHER_IDENTITY.union(STUDENT_IDENTITY):
+				# 检查是否包含机构后缀关键词（可能是错误识别）
+				has_institution_suffix = False
+				for keyword in INSTITUTION_SUFFIXES:
+					if keyword in segment:
+						has_institution_suffix = True
+
+						# 是否保留二级学院名称
+						if Config().formatting.include_secondary_college:
+							name_parts.append(segment)
+							institution_parts.extend(name_parts)
+
+						name_parts = []  # 重置姓名识别
+						logger.debug(f'姓名部分包含机构后缀：{keyword}，重置姓名识别')
+						break
+
+				if not has_institution_suffix:
+					name_parts.append(segment)
+					logger.debug(f'添加到姓名部分：{segment}')
+
+			# 识别身份（教师/学生）
+			else:
+				for identity in TEACHER_IDENTITY:
+					if identity in segment:
+						self.__is_teacher = True
+						logger.info(f'识别到教师身份标识：{identity}')
+						break
+
+		# 设置识别结果
+		if found_institution_end and institution_parts:
+			self.__institution = ''.join(institution_parts)
+			logger.debug(f'成功识别机构：{self.__institution}')
+		else:
+			self.__institution = Config().institution.default_name
+			logger.warning(f'  未能识别机构，设置为：{self.__institution}')
+
+		if name_parts:
+			self.__name = ''.join(name_parts)
+			logger.debug(f'成功识别姓名：{self.__name}')
+		else:
+			self.__name = Config().name.default_name
+			logger.warning(f'  未能识别姓名，设置为：{self.__name}')
+
+		logger.debug(f'解析完成，结果：{self.full_info}')
+
+	#region Properties
+	@property
+	def full_info(self) -> str:
+		"""
+		返回格式化的申请人信息字符串
+
+		- 机构-姓名（教师）或
+		- 机构-姓名
+		"""
+		return f"{self.__institution}-{self.__name}{'（教师）' if self.__is_teacher else ''}"
+
+	@property
+	def origin_info(self) -> str:
+		"""返回原始申请信息字符串"""
+		return self.__origin_info
+
+	@property
+	def info(self) -> str:
+		"""返回清理后的申请信息字符串"""
+		return self.__info
+
+	@property
+	def institution(self) -> Optional[str]:
+		"""返回机构名称"""
+		return self.__institution
+
+	@property
+	def name(self) -> Optional[str]:
+		"""返回申请人姓名"""
+		return self.__name
+
+	@property
+	def is_teacher(self) -> bool:
+		"""
+		返回身份标识
+
+		- True: 表示教师
+		- False: 表示学生（默认值）
+		"""
+		return self.__is_teacher
+	#endregion Properties
+
+
+def main():
+	"""主函数，测试信息解析功能"""
+	# 配置控制台日志输出
+	from .logger import setup_console_logging
+	setup_console_logging()
+
+	# 加载样本数据
+	from .utils import load_samples_from_file
+	samples = load_samples_from_file()
+
+	# 初始化并配置分词器
+	update_jieba_keywords()
+
+	applicants: List[Applicant] = []
+
+	logger.info(f'测试样本数量：{len(samples)}')
+	for index, sample in enumerate(samples, 1):
+		logger.info(f'处理样本 {index}/{len(samples)}：{sample}')
+		applicant = Applicant(sample)
+		applicant.parse()
+		applicants.append(applicant)
+
+	logger.info('所有样本解析完成：')
+	for applicant in applicants:
+		result = f'{applicant.origin_info} -> {applicant.full_info}'
+		logger.info(f'  {result}')
+
+
+if __name__ == '__main__':
+	main()
