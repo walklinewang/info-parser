@@ -1,6 +1,7 @@
 .vscode/
 *.log
-samples.txt
+*.json
+*.txt
 \#*/
 
 # Byte-compiled / optimized / DLL files
