@@ -612,5 +612,5 @@ reference = "aliyun"
 
 [metadata]
 lock-version = "2.1"
-python-versions = "<3.14,>=3.10"
-content-hash = "ff2490d0263c747d705a0eb96176e8905a39d46b94238a8c50932d8cb8bee791"
+python-versions = ">=3.10,<3.14"
+content-hash = "6c78a087d0f9d5c64ad376f1e9852c5f302a54c8bcf4429342643e64b60f06fe"
