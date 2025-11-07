@@ -38,14 +38,13 @@ from typing import List, Optional, Set
 
 import jieba
 
-from .config import Config
+from .config import config
 from .logger import logger
 from .utils import update_jieba_keywords
 
 
-TEACHER_IDENTITY: Set[str] = set(Config().identity.teacher)
-STUDENT_IDENTITY: Set[str] = set(Config().identity.student)
-INSTITUTION_SUFFIXES: Set[str] = set(Config().institution.suffixes)
+TEACHER_IDENTITY: Set[str] = set(config.identity.teacher)
+STUDENT_IDENTITY: Set[str] = set(config.identity.student)
 
 
 class Applicant:
@@ -57,6 +56,7 @@ class Applicant:
 	Attributes:
 		origin_info: 原始申请信息字符串
 		info: 清理后的申请信息字符串（去除连接符）
+		split_result: 对清理后的信息进行分词后的结果列表
 		institution: 识别出的机构名称
 		name: 识别出的申请人姓名
 		is_teacher: 身份标识，True表示教师，False表示学生（默认值）
@@ -70,6 +70,7 @@ class Applicant:
 		"""
 		self.__origin_info: str = info
 		self.__info: str = info
+		self.__split_result: Optional[List[str]] = None
 		self.__institution: Optional[str] = None
 		self.__name: Optional[str] = None
 		self.__is_teacher: bool = False
@@ -88,7 +89,7 @@ class Applicant:
 		"""
 		logger.debug(f'清理前的信息：{self.__info}')
 
-		for connector in set(Config().formatting.connectors):
+		for connector in set(config.formatting.connectors):
 			self.__info = self.__info.replace(connector, '')
 
 		self.__info = self.__info.strip()
@@ -108,6 +109,7 @@ class Applicant:
 		"""
 		# 对清理后的文本进行分词
 		segments = jieba.lcut(self.__info)
+		self.__split_result = segments
 		logger.debug(f'分词结果: {segments}')
 
 		found_institution_end = False
@@ -123,7 +125,7 @@ class Applicant:
 				institution_parts.append(segment)
 				logger.debug(f'添加到机构部分：{segment}')
 
-				for keyword in INSTITUTION_SUFFIXES:
+				for keyword in config.institution.all_suffixes:
 					if keyword in segment:
 						found_institution_end = True
 						break
@@ -132,12 +134,12 @@ class Applicant:
 			elif segment not in TEACHER_IDENTITY.union(STUDENT_IDENTITY):
 				# 检查是否包含机构后缀关键词（可能是错误识别）
 				has_institution_suffix = False
-				for keyword in INSTITUTION_SUFFIXES:
+				for keyword in config.institution.all_suffixes:
 					if keyword in segment:
 						has_institution_suffix = True
 
 						# 是否保留二级学院名称
-						if Config().formatting.include_secondary_college:
+						if config.formatting.include_secondary_college:
 							name_parts.append(segment)
 							institution_parts.extend(name_parts)
 
@@ -162,14 +164,14 @@ class Applicant:
 			self.__institution = ''.join(institution_parts)
 			logger.debug(f'成功识别机构：{self.__institution}')
 		else:
-			self.__institution = Config().institution.default_name
+			self.__institution = config.institution.default_name
 			logger.warning(f'  未能识别机构，设置为：{self.__institution}')
 
 		if name_parts:
 			self.__name = ''.join(name_parts)
 			logger.debug(f'成功识别姓名：{self.__name}')
 		else:
-			self.__name = Config().name.default_name
+			self.__name = config.name.default_name
 			logger.warning(f'  未能识别姓名，设置为：{self.__name}')
 
 		logger.debug(f'解析完成，结果：{self.full_info}')
@@ -177,38 +179,45 @@ class Applicant:
 	#region Properties
 	@property
 	def full_info(self) -> str:
-		"""
-		返回格式化的申请人信息字符串
+		"""获取格式化的申请人信息字符串"""
+		output_pattern = config.formatting.output_pattern_teacher \
+			if self.__is_teacher else config.formatting.output_pattern_student
+		output = {
+			'institution': self.__institution,
+			'name': self.__name,
+		}
 
-		- 机构-姓名（教师）或
-		- 机构-姓名
-		"""
-		return f"{self.__institution}-{self.__name}{'（教师）' if self.__is_teacher else ''}"
+		return output_pattern.format(**output)
 
 	@property
 	def origin_info(self) -> str:
-		"""返回原始申请信息字符串"""
+		"""获取原始申请信息字符串"""
 		return self.__origin_info
 
 	@property
 	def info(self) -> str:
-		"""返回清理后的申请信息字符串"""
+		"""获取清理后的申请信息字符串"""
 		return self.__info
 
 	@property
+	def split_result(self) -> Optional[List[str]]:
+		"""获取分词结果"""
+		return self.__split_result
+
+	@property
 	def institution(self) -> Optional[str]:
-		"""返回机构名称"""
+		"""获取机构名称"""
 		return self.__institution
 
 	@property
 	def name(self) -> Optional[str]:
-		"""返回申请人姓名"""
+		"""获取申请人姓名"""
 		return self.__name
 
 	@property
 	def is_teacher(self) -> bool:
 		"""
-		返回身份标识
+		获取身份标识
 
 		- True: 表示教师
 		- False: 表示学生（默认值）

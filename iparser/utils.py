@@ -9,11 +9,10 @@ from typing import List, Set
 import jieba
 jieba.setLogLevel(logging.INFO)
 
-from .config import Config
+from .config import config
 from .logger import logger
 
 
-INSTITUTION_SUFFIXES: Set[str] = set(Config().institution.suffixes)
 DEFAULT_SAMPLE_FILE = 'samples.txt'
 
 def load_samples_from_file(file_path: str = DEFAULT_SAMPLE_FILE) -> List[str]:
@@ -64,12 +63,11 @@ def update_jieba_keywords():
 	logger.debug('开始更新Jieba分词器配置...')
 
 	# 合并特殊机构名称到机构后缀集合
-	INSTITUTION_SUFFIXES.update(set(Config().institution.short_names))
-	logger.debug(f'  已合并特殊机构，当前机构关键词总数：{len(INSTITUTION_SUFFIXES)}')
+	logger.debug(f'  已合并特殊机构，当前机构关键词总数：{len(config.institution.all_suffixes)}')
 
 	# 添加机构关键词到分词器
 	added_count = 0
-	for keyword in INSTITUTION_SUFFIXES:
+	for keyword in config.institution.all_suffixes:
 		jieba.add_word(keyword)
 		jieba.suggest_freq(keyword, True)
 		added_count += 1
@@ -77,7 +75,7 @@ def update_jieba_keywords():
 
 	# 删除干扰关键词
 	deleted_count = 0
-	for keyword in set(Config().institution.excluded_keywords):
+	for keyword in set(config.institution.excluded_keywords):
 		jieba.del_word(keyword)
 		deleted_count += 1
 	logger.debug(f'  已删除 {deleted_count} 个干扰关键词')

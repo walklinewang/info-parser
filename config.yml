@@ -7,6 +7,9 @@ identity:
 
 # 文本格式化配置
 formatting:
+  # 教师和学生输出信息格式
+  output_pattern_teacher: '{institution}-{name}（教师）'
+  output_pattern_student: '{institution}-{name}'
   # 连接符和分隔符
   connectors: [
     ' ', '-', '—', '－',
@@ -26,8 +29,8 @@ institution:
     '职业技术学院', '理工学院', '师范学院'
   ]
   # 机构简称
-  short_names: [
-    '河工大', '洛理', '哈理工'
+  shortened_names: [
+    '河工大', '洛理', '哈理工', '商科院',
   ]
   # 排除的关键词
   excluded_keywords: [
