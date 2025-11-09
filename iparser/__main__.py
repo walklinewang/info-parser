@@ -34,13 +34,17 @@ print(f'输出：{applicant.full_info}')
 	身份：学生
 	输出：天津理工大学-江小白
 """
+import logging
+import warnings
+
 from typing import List, Optional, Set
+warnings.filterwarnings('ignore', category=UserWarning)
 
 import jieba
+jieba.setLogLevel(logging.INFO)
 
-from .config import config
-from .logger import logger
-from .utils import update_jieba_keywords
+from iparser.config import config
+from iparser.logger import logger
 
 
 TEACHER_IDENTITY: Set[str] = set(config.identity.teacher)
@@ -87,8 +91,6 @@ class Applicant:
 
 		移除申请信息中的常见连接符和分隔符，为后续的分词和解析做准备。
 		"""
-		logger.debug(f'清理前的信息：{self.__info}')
-
 		for connector in set(config.formatting.connectors):
 			self.__info = self.__info.replace(connector, '')
 
@@ -110,7 +112,7 @@ class Applicant:
 		# 对清理后的文本进行分词
 		segments = jieba.lcut(self.__info)
 		self.__split_result = segments
-		logger.debug(f'分词结果: {segments}')
+		logger.debug(f'分词结果：{segments}')
 
 		found_institution_end = False
 		institution_parts = []
@@ -174,8 +176,6 @@ class Applicant:
 			self.__name = config.name.default_name
 			logger.warning(f'  未能识别姓名，设置为：{self.__name}')
 
-		logger.debug(f'解析完成，结果：{self.full_info}')
-
 	#region Properties
 	@property
 	def full_info(self) -> str:
@@ -226,14 +226,47 @@ class Applicant:
 	#endregion Properties
 
 
+def update_jieba_keywords():
+	"""
+	更新Jieba分词器配置
+
+	将机构后缀和特殊机构名称添加到分词器中，并移除需要排除的关键词，
+	以提高机构名称和人名识别的准确性。
+
+	操作包括：
+	- 将特殊机构名称合并到机构后缀集合中
+	- 为所有机构关键词设置分词频率
+	- 删除需要排除的关键词
+	"""
+	logger.debug('开始更新Jieba分词器配置...')
+
+	# 合并特殊机构名称到机构后缀集合
+	logger.debug(f'  已合并特殊机构，当前机构关键词总数：{len(config.institution.all_suffixes)}')
+
+	# 添加机构关键词到分词器
+	added_count = 0
+	for keyword in config.institution.all_suffixes:
+		jieba.add_word(keyword)
+		jieba.suggest_freq(keyword, True)
+		added_count += 1
+	logger.debug(f'  已添加 {added_count} 个机构关键词到分词器')
+
+	# 删除干扰关键词
+	deleted_count = 0
+	for keyword in set(config.institution.excluded_keywords):
+		jieba.del_word(keyword)
+		deleted_count += 1
+	logger.debug(f'  已删除 {deleted_count} 个干扰关键词')
+	logger.debug('Jieba分词器配置更新完成')
+
 def main():
 	"""主函数，测试信息解析功能"""
 	# 配置控制台日志输出
-	from .logger import setup_console_logging
+	from iparser.logger import setup_console_logging
 	setup_console_logging()
 
 	# 加载样本数据
-	from .utils import load_samples_from_file
+	from iparser.utils import load_samples_from_file
 	samples = load_samples_from_file()
 
 	# 初始化并配置分词器

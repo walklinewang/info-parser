@@ -3,21 +3,14 @@ This file is part of the Info Parser project, https://github.com/walklinewang/in
 The MIT License (MIT)
 Copyright © 2025 Walkline Wang <walkline@gmail.com>
 """
-import sys
 from pathlib import Path
 from typing import Set
 
 from confz import BaseConfig, FileSource
 
+from iparser.logger import logger
+from iparser.utils import resource_path
 
-# https://github.com/Yuukiy/JavSP/blob/master/javsp/lib.py#L18
-def resource_path(path: str) -> str:
-	"""获取一个随代码打包的文件在解压后的路径"""
-	if getattr(sys, "frozen", False):
-		return path
-
-	path_joined = Path(__file__).parent.parent / path
-	return str(path_joined)
 
 class Identity(BaseConfig):
 	"""身份解析配置"""
@@ -53,10 +46,27 @@ class Institution(BaseConfig):
 		"""获取所有机构后缀和简称关键词"""
 		return self.suffixes.union(self.shortened_names)
 
+
 class Name(BaseConfig):
 	"""姓名解析配置"""
 	default_name: str # 默认姓名
 
+
+def get_config_source():
+	"""获取配置文件源"""
+	sources = []
+	source = resource_path('config.yml')
+
+	if not source.exists():
+		logger.warning(f'配置文件 {source} 不存在，将创建一个默认配置文件')
+
+		with open(Path(__file__).parent.parent / 'config.yml', 'rb') as input_file:
+			with open(source, 'wb') as output_file:
+				output_file.write(input_file.read())
+
+	sources.append(FileSource(file=source))
+
+	return sources
 
 class Config(BaseConfig):
 	"""信息解析器主配置"""
@@ -64,7 +74,7 @@ class Config(BaseConfig):
 	formatting: Formatting
 	institution: Institution
 	name: Name
-	CONFIG_SOURCES = [FileSource(file=resource_path('config.yml'))]
+	CONFIG_SOURCES = get_config_source()
 
 
 config = Config()

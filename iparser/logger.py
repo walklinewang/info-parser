@@ -25,7 +25,7 @@ def setup_logging():
 		logger.removeHandler(handler)
 
 	# 创建文件处理器
-	file_handler = logging.FileHandler('info_parser.log', encoding='utf-8')
+	file_handler = logging.FileHandler('iparser.log', encoding='utf-8')
 	file_handler.setLevel(logging.DEBUG)
 	file_handler.setFormatter(
 		logging.Formatter('%(asctime)s - %(levelname)s - %(message)s',

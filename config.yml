@@ -3,7 +3,7 @@ identity:
   # 教师身份关键词
   teacher: ['教师', '老师']
   # 学生身份关键词
-  student: ['学生']
+  student: ['学生', '学']
 
 # 文本格式化配置
 formatting:
@@ -12,7 +12,7 @@ formatting:
   output_pattern_student: '{institution}-{name}'
   # 连接符和分隔符
   connectors: [
-    ' ', '-', '—', '－',
+    ' ', '-', '—', '－', '/',
     '~', '～', '(', ')', '（', '）',
     '丶', '，', '、', '；', ';', '：', ':'
   ]
@@ -34,7 +34,7 @@ institution:
   ]
   # 排除的关键词
   excluded_keywords: [
-    '学院路'
+    '学院路', '语学',
   ]
   # 默认机构名称
   default_name: '未知机构'
