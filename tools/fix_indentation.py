@@ -8,8 +8,8 @@
   python fix_indentation.py <folder> # 处理指定目录及其子目录下所有Python文件
   python fix_indentation.py <file>   # 处理单个Python文件
 """
-import re
 import argparse
+import re
 from pathlib import Path
 from typing import List
 
@@ -34,7 +34,7 @@ def fix_indentation_in_file(file_path) -> bool:
 		print(f'已修复 {file_path} 中的空行缩进')
 		return True
 	except Exception as e:
-		print(f'修复 {file_path} 失败: {str(e)}')
+		print(f'修复 {file_path} 失败：{str(e)}')
 		return False
 
 def find_python_files(directory) -> List[str]:
