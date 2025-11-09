@@ -1,0 +1,100 @@
+name: Build and Release Info-Parser
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name (uses default if not provided)'
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.13']
+    env:
+      PYTHONIOENCODING: "utf-8"
+      TAG_NAME: ${{ inputs.tag_name || github.ref_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # Checkout commit history including tags
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Set up project dependencies
+        run: |
+          # Install poetry
+          python -m pip install --upgrade pip
+          pip install poetry
+
+          # Set up poetry
+          poetry config virtualenvs.in-project true
+          poetry config cache-dir .cache/pypoetry
+
+          # Install project dependencies
+          poetry install
+
+      - name: Cache project dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/.cache/pypoetry
+            **/.venv
+            **/poetry.lock
+          key: python-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            python-${{ steps.setup-python.outputs.python-version }}-poetry-
+        continue-on-error: true
+
+      - name: Build executable file
+        shell: pwsh
+        run: |
+          # Update executable file version
+          poetry run python ./tools/update_version.py
+
+          # Build executable file
+          poetry run pyinstaller --clean --noconfirm ./resources/iparser.spec
+
+      - name: Create release archive
+        id: create_archive
+        shell: pwsh
+        run: |
+          $ARCHIVE_NAME = "iparser-${{ env.TAG_NAME }}.zip"
+          Compress-Archive -Path dist/* -DestinationPath $ARCHIVE_NAME
+          echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> $env:GITHUB_ENV
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: ${{ env.ARCHIVE_NAME }}
+          if-no-files-found: error
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          name: ${{ env.TAG_NAME }}
+          tag_name: ${{ env.TAG_NAME }}
+          overwrite_files: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
