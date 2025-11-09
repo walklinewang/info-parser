@@ -1,20 +1,23 @@
 [project]
 name = "iparser"
 version = "0.0.0"
-description = ""
+description = "申请人信息（如机构名称、姓名、身份等）的智能解析工具"
 authors = [
     {name = "Walkline Wang",email = "walkline@gmail.com"}
 ]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "jieba (>=0.42.1,<0.43.0)",
     "confz (>=2.1.0,<3.0.0)"
 ]
 
+[project.urls]
+repository = "https://github.com/walklinewang/info-parser"
+
 [project.scripts]
-iparser = "iparser.__main__:main"
+iparser = "iparser.gui.__main__:main"
 
 [[tool.poetry.source]]
 name = "aliyun"
@@ -27,13 +30,22 @@ build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
 dev = [
-    "pylint (>=4.0.2,<5.0.0)"
+    "pylint (>=4.0.2,<5.0.0)",
+    "pyinstaller (>=6.16.0,<7.0.0)",
+    "pytest (>=9.0.0,<10.0.0)"
 ]
+
+[tool.pytest.ini_options]
+addopts = "--cache-clear --cov --cov-branch --cov-report=html tests/ -vv --durations=10"
 
 [tool.pylint.main]
 disable = [
     "logging-fstring-interpolation",
     "wrong-import-position",
+    "too-many-return-statements",
+    "broad-exception-caught",
+    "attribute-defined-outside-init",
+    "too-many-instance-attributes",
 ]
 
 [tool.pylint.format]
