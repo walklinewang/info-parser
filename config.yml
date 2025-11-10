@@ -34,7 +34,7 @@ institution:
   ]
   # 排除的关键词
   excluded_keywords: [
-    '学院路', '语学',
+    '学院路', '语学', '大学人文',
   ]
   # 默认机构名称
   default_name: '未知机构'
