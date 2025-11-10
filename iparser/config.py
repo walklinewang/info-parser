@@ -12,6 +12,23 @@ from iparser.logger import logger
 from iparser.utils import resource_path
 
 
+def get_config_source():
+	"""获取配置文件源"""
+	sources = []
+	source = resource_path('config.yml')
+
+	if not source.exists():
+		logger.warning(f'配置文件 {source} 不存在，将创建一个默认配置文件')
+
+		with open(Path(__file__).parent.parent / 'config.yml', 'rb') as input_file:
+			with open(source, 'wb') as output_file:
+				output_file.write(input_file.read())
+
+	sources.append(FileSource(file=source))
+
+	return sources
+
+
 class Identity(BaseConfig):
 	"""身份解析配置"""
 	teacher: Set[str] # 教师身份关键词
@@ -51,22 +68,6 @@ class Name(BaseConfig):
 	"""姓名解析配置"""
 	default_name: str # 默认姓名
 
-
-def get_config_source():
-	"""获取配置文件源"""
-	sources = []
-	source = resource_path('config.yml')
-
-	if not source.exists():
-		logger.warning(f'配置文件 {source} 不存在，将创建一个默认配置文件')
-
-		with open(Path(__file__).parent.parent / 'config.yml', 'rb') as input_file:
-			with open(source, 'wb') as output_file:
-				output_file.write(input_file.read())
-
-	sources.append(FileSource(file=source))
-
-	return sources
 
 class Config(BaseConfig):
 	"""信息解析器主配置"""

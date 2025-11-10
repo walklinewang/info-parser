@@ -6,13 +6,18 @@ Copyright © 2025 Walkline Wang <walkline@gmail.com>
 import json
 import tkinter as tk
 from pathlib import Path
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk, scrolledtext
 from typing import List
 
-from iparser.__main__ import Applicant, update_jieba_keywords
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+
+from iparser.__init__ import __version__
+from iparser.api.applicant import Applicant
 from iparser.config import config
 from iparser.gui.clipboard_monitor import ClipboardMonitor
 from iparser.logger import logger
+from iparser.utils import update_jieba_keywords
 
 
 class MainWindow:
@@ -25,7 +30,7 @@ class MainWindow:
 			root: tkinter根窗口
 		"""
 		self.__root = root
-		self.__root.title('信息解析工具')
+		self.__root.title(f'信息解析工具 v{__version__}')
 		self.__root.geometry('350x167')
 		self.__root.resizable(False, False)
 		self.__root.protocol('WM_DELETE_WINDOW', self.on_close)
@@ -125,43 +130,38 @@ class MainWindow:
 		config_content_frame = ttk.Frame(self.config_frame)
 		config_content_frame.pack(fill=tk.BOTH, expand=True)
 
+		# 使用grid布局确保左右两个区域各占一半空间
+		config_content_frame.grid_columnconfigure(0, weight=1)
+		config_content_frame.grid_columnconfigure(1, weight=1)
+		config_content_frame.grid_rowconfigure(0, weight=1)
+
 		# 左侧：机构简称
 		short_names_frame = ttk.LabelFrame(config_content_frame, text='机构简称', padding='5')
-		short_names_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+		short_names_frame.grid(row=0, column=0, sticky='nsew', padx=(0, 5))
 
-		self.short_names_text = tk.Text(short_names_frame, height=6, wrap=tk.WORD)
+		self.short_names_text = scrolledtext.ScrolledText(
+			short_names_frame, height=6, wrap=tk.WORD)
 		self.short_names_text.pack(fill=tk.BOTH, expand=True)
-
-		# 添加滚动条
-		short_names_scrollbar = ttk.Scrollbar(self.short_names_text,
-			command=self.short_names_text.yview)
-		short_names_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-		self.short_names_text.config(yscrollcommand=short_names_scrollbar.set)
 
 		# 右侧：干扰词
 		excluded_words_frame = ttk.LabelFrame(config_content_frame, text='干扰词', padding='5')
-		excluded_words_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
+		excluded_words_frame.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
 
-		self.excluded_words_text = tk.Text(excluded_words_frame, height=6, wrap=tk.WORD)
+		self.excluded_words_text = scrolledtext.ScrolledText(
+			excluded_words_frame, height=6, wrap=tk.WORD)
 		self.excluded_words_text.pack(fill=tk.BOTH, expand=True)
 
-		# 添加滚动条
-		excluded_words_scrollbar = ttk.Scrollbar(self.excluded_words_text,
-			command=self.excluded_words_text.yview)
-		excluded_words_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-		self.excluded_words_text.config(yscrollcommand=excluded_words_scrollbar.set)
-
 		# 按钮区域
-		buttons_frame = ttk.Frame(self.config_frame)
-		buttons_frame.pack(fill=tk.X, pady=5)
+		button_frame = ttk.Frame(self.config_frame)
+		button_frame.pack(fill=tk.X, pady=5)
 
-		self.save_button = ttk.Button(buttons_frame, text='保存',
+		self.save_button = ttk.Button(button_frame, text='保存',
 			command=self.save_custom_config)
-		self.save_button.pack(side=tk.RIGHT, padx=5)
+		self.save_button.pack(side=tk.LEFT, padx=5)
 
 		# 示例说明标签
 		example_label = ttk.Label(
-			self.config_frame,
+			button_frame,
 			text='注：每行输入一个关键词',
 			font=(None, 8),
 			foreground='gray'
@@ -225,7 +225,7 @@ class MainWindow:
 
 		# 根据配置区域显示状态设置固定窗口大小
 		if self.__config_visible.get():
-			self.__root.geometry(f'350x410+{x}+{y}')
+			self.__root.geometry(f'350x397+{x}+{y}')
 		else:
 			self.__root.geometry(f'350x167+{x}+{y}')
 

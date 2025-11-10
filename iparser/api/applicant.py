@@ -1,18 +1,16 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 This file is part of the Info Parser project, https://github.com/walklinewang/info-parser
 The MIT License (MIT)
 Copyright © 2025 Walkline Wang <walkline@gmail.com>
 
-申请信息解析工具
+申请信息解析API
 
-此工具提供了对申请人信息（如机构名称、姓名、身份等）的智能解析功能。
+此模块提供了对申请人信息（如机构名称、姓名、身份等）的智能解析功能。
 主要功能包括机构名称识别、姓名提取和身份标识（教师/学生）。
 
 使用示例：
 
-from parser.__main__ import Applicant
+from iparser.api.applicant import Applicant
 
 # 创建申请人对象
 applicant = Applicant('天津理工大学计算机科学与工程学院江小白学生')
@@ -34,14 +32,8 @@ print(f'输出：{applicant.full_info}')
 	身份：学生
 	输出：天津理工大学-江小白
 """
-import logging
-import warnings
-
 from typing import List, Optional, Set
-warnings.filterwarnings('ignore', category=UserWarning)
-
 import jieba
-jieba.setLogLevel(logging.INFO)
 
 from iparser.config import config
 from iparser.logger import logger
@@ -224,68 +216,3 @@ class Applicant:
 		"""
 		return self.__is_teacher
 	#endregion Properties
-
-
-def update_jieba_keywords():
-	"""
-	更新Jieba分词器配置
-
-	将机构后缀和特殊机构名称添加到分词器中，并移除需要排除的关键词，
-	以提高机构名称和人名识别的准确性。
-
-	操作包括：
-	- 将特殊机构名称合并到机构后缀集合中
-	- 为所有机构关键词设置分词频率
-	- 删除需要排除的关键词
-	"""
-	logger.debug('开始更新Jieba分词器配置...')
-
-	# 合并特殊机构名称到机构后缀集合
-	logger.debug(f'  已合并特殊机构，当前机构关键词总数：{len(config.institution.all_suffixes)}')
-
-	# 添加机构关键词到分词器
-	added_count = 0
-	for keyword in config.institution.all_suffixes:
-		jieba.add_word(keyword)
-		jieba.suggest_freq(keyword, True)
-		added_count += 1
-	logger.debug(f'  已添加 {added_count} 个机构关键词到分词器')
-
-	# 删除干扰关键词
-	deleted_count = 0
-	for keyword in set(config.institution.excluded_keywords):
-		jieba.del_word(keyword)
-		deleted_count += 1
-	logger.debug(f'  已删除 {deleted_count} 个干扰关键词')
-	logger.debug('Jieba分词器配置更新完成')
-
-def main():
-	"""主函数，测试信息解析功能"""
-	# 配置控制台日志输出
-	from iparser.logger import setup_console_logging
-	setup_console_logging()
-
-	# 加载样本数据
-	from iparser.utils import load_samples_from_file
-	samples = load_samples_from_file()
-
-	# 初始化并配置分词器
-	update_jieba_keywords()
-
-	applicants: List[Applicant] = []
-
-	logger.info(f'测试样本数量：{len(samples)}')
-	for index, sample in enumerate(samples, 1):
-		logger.info(f'处理样本 {index}/{len(samples)}：{sample}')
-		applicant = Applicant(sample)
-		applicant.parse()
-		applicants.append(applicant)
-
-	logger.info('所有样本解析完成：')
-	for applicant in applicants:
-		result = f'{applicant.origin_info} -> {applicant.full_info}'
-		logger.info(f'  {result}')
-
-
-if __name__ == '__main__':
-	main()
