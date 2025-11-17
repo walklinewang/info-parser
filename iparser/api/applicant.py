@@ -38,6 +38,7 @@ print(f'输出：{applicant.full_info}')
 	输出：天津理工大学-江小白
 """
 from typing import List, Optional, Set
+
 import jieba
 
 from iparser.config import config
