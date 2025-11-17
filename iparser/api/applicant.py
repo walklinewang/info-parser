@@ -11,6 +11,11 @@ Copyright © 2025 Walkline Wang <walkline@gmail.com>
 使用示例：
 
 from iparser.api.applicant import Applicant
+from iparser.utils import update_jieba_keywords
+
+
+# 更新结巴分词关键词
+update_jieba_keywords()
 
 # 创建申请人对象
 applicant = Applicant('天津理工大学计算机科学与工程学院江小白学生')
@@ -19,7 +24,7 @@ applicant = Applicant('天津理工大学计算机科学与工程学院江小白
 applicant.parse()
 
 # 获取解析结果
-print(f'输入：{applicant.origin_info}')
+print(f'输入：{applicant.info}')
 print(f'机构：{applicant.institution}')
 print(f'姓名：{applicant.name}')
 print(f'身份：{'教师' if applicant.is_teacher else '学生'}')
@@ -50,8 +55,7 @@ class Applicant:
 	用于存储和处理申请人的信息，包括原始信息、清理后的信息、机构、姓名和身份标识。
 
 	Attributes:
-		origin_info: 原始申请信息字符串
-		info: 清理后的申请信息字符串（去除连接符）
+		info: 原始申请信息字符串
 		split_result: 对清理后的信息进行分词后的结果列表
 		institution: 识别出的机构名称
 		name: 识别出的申请人姓名
@@ -64,30 +68,30 @@ class Applicant:
 		Args:
 			info: 原始申请信息字符串
 		"""
-		self.__origin_info: str = info
 		self.__info: str = info
 		self.__split_result: Optional[List[str]] = None
 		self.__institution: Optional[str] = None
 		self.__name: Optional[str] = None
 		self.__is_teacher: bool = False
 
-		self.__clean_info()
-
 	def __str__(self):
 		"""返回格式化的申请人信息字符串"""
 		return self.full_info
 
-	def __clean_info(self):
+	def __clean_info(self, info: str) -> str:
 		"""
-		清理申请信息字符串
+		清理字符串信息
 
-		移除申请信息中的常见连接符和分隔符，为后续的分词和解析做准备。
+		移除信息中的常见连接符和分隔符。
+
+		Returns:
+			str: 清理后的字符串
 		"""
 		for connector in set(config.formatting.connectors):
-			self.__info = self.__info.replace(connector, '')
+			info = info.replace(connector, '')
 
-		self.__info = self.__info.strip()
-		logger.debug(f'清理后的信息：{self.__info}')
+		info = info.strip()
+		return info
 
 	def parse(self):
 		"""
@@ -155,14 +159,14 @@ class Applicant:
 
 		# 设置识别结果
 		if found_institution_end and institution_parts:
-			self.__institution = ''.join(institution_parts)
+			self.__institution = self.__clean_info(''.join(institution_parts))
 			logger.debug(f'成功识别机构：{self.__institution}')
 		else:
 			self.__institution = config.institution.default_name
 			logger.warning(f'  未能识别机构，设置为：{self.__institution}')
 
-		if name_parts:
-			self.__name = ''.join(name_parts)
+		self.__name = self.__clean_info(''.join(name_parts))
+		if self.__name:
 			logger.debug(f'成功识别姓名：{self.__name}')
 		else:
 			self.__name = config.name.default_name
@@ -182,13 +186,8 @@ class Applicant:
 		return output_pattern.format(**output)
 
 	@property
-	def origin_info(self) -> str:
-		"""获取原始申请信息字符串"""
-		return self.__origin_info
-
-	@property
 	def info(self) -> str:
-		"""获取清理后的申请信息字符串"""
+		"""获取原始申请信息字符串"""
 		return self.__info
 
 	@property
