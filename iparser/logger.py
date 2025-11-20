@@ -40,4 +40,8 @@ def setup_console_logging():
 	console_handler.setFormatter(logging.Formatter('%(message)s'))
 	logger.addHandler(console_handler)
 
+def disable_logging():
+	"""禁用所有日志处理器"""
+	logger.setLevel(logging.CRITICAL)
+
 setup_logging()

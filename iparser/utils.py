@@ -7,6 +7,9 @@ import logging
 import sys
 from pathlib import Path
 
+import warnings
+warnings.filterwarnings('ignore', module='jieba', category=UserWarning)
+
 import jieba
 jieba.setLogLevel(logging.INFO)
 
@@ -34,6 +37,7 @@ def update_jieba_keywords():
 	- 删除需要排除的关键词
 	"""
 	from iparser.config import config
+
 
 	logger.debug('开始更新Jieba分词器配置...')
 	logger.debug(f'  当前机构关键词总数（含简称）：{len(config.institution.all_suffixes)}')

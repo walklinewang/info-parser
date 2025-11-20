@@ -112,21 +112,44 @@ class Applicant:
 		logger.debug(f'分词结果：{segments}')
 
 		found_institution_end = False
+		found_teacher_identity = False
 		institution_parts = []
 		name_parts = []
 
 		# 遍历分词结果，识别机构、姓名和身份
 		for segment in segments:
+			segment = segment.strip()
+			if not segment:
+				continue
+
 			logger.debug(f'处理分词：{segment}')
+
+			# 识别教师身份
+			if not found_teacher_identity:
+				for identity in TEACHER_IDENTITY:
+					if identity in segment:
+						self.__is_teacher = True
+						found_teacher_identity = True
+
+						logger.info(f'识别到教师身份标识：{identity}')
+						break
 
 			# 识别机构
 			if not found_institution_end:
 				institution_parts.append(segment)
 				logger.debug(f'添加到机构部分：{segment}')
 
-				for keyword in config.institution.all_suffixes:
+				for keyword in config.institution.shortened_names:
 					if keyword in segment:
 						found_institution_end = True
+						break
+
+				for keyword in config.institution.suffixes:
+					if keyword in segment:
+						if len(institution_parts) > 1 or len(segment) > 2:
+							found_institution_end = True
+						else:
+							institution_parts.pop()
 						break
 
 			# 识别姓名
@@ -142,21 +165,13 @@ class Applicant:
 							name_parts.append(segment)
 							institution_parts.extend(name_parts)
 
-						name_parts = []  # 重置姓名识别
+						name_parts = [] # 重置姓名识别
 						logger.debug(f'姓名部分包含机构后缀：{keyword}，重置姓名识别')
 						break
 
 				if not has_institution_suffix:
 					name_parts.append(segment)
 					logger.debug(f'添加到姓名部分：{segment}')
-
-			# 识别身份（教师/学生）
-			else:
-				for identity in TEACHER_IDENTITY:
-					if identity in segment:
-						self.__is_teacher = True
-						logger.info(f'识别到教师身份标识：{identity}')
-						break
 
 		# 设置识别结果
 		if found_institution_end and institution_parts:
