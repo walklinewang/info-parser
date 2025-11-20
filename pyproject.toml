@@ -32,11 +32,12 @@ build-backend = "poetry.core.masonry.api"
 dev = [
     "pylint (>=4.0.2,<5.0.0)",
     "pyinstaller (>=6.16.0,<7.0.0)",
-    "pytest (>=9.0.0,<10.0.0)"
+    "pytest (>=9.0.0,<10.0.0)",
+    "pytest-html (>=4.1.1,<5.0.0)",
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cache-clear --cov --cov-branch --cov-report=html tests/ -vv --durations=10"
+addopts = "--cache-clear --html=pytest-report.html --self-contained-html tests/ -vv --durations=10"
 
 [tool.pylint.main]
 disable = [
