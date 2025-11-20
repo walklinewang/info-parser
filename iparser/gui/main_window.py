@@ -9,9 +9,6 @@ from pathlib import Path
 from tkinter import messagebox, ttk, scrolledtext
 from typing import List
 
-import warnings
-warnings.filterwarnings('ignore', category=UserWarning)
-
 from iparser.__init__ import __version__
 from iparser.api.applicant import Applicant
 from iparser.config import config
