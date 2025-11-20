@@ -91,7 +91,12 @@
 Info Parser 提供了简洁的 Python API，可以轻松集成到其他项目中：
 
 ```python
-from iparser.__main__ import Applicant
+from iparser.api.applicant import Applicant
+from iparser.utils import update_jieba_keywords
+
+
+# 更新结巴分词关键词
+update_jieba_keywords()
 
 # 创建申请人对象
 applicant = Applicant('天津理工大学计算机科学与工程学院江小白学生')
@@ -100,7 +105,7 @@ applicant = Applicant('天津理工大学计算机科学与工程学院江小白
 applicant.parse()
 
 # 获取解析结果
-print(f'输入：{applicant.origin_info}')
+print(f'输入：{applicant.info}')
 print(f'机构：{applicant.institution}')
 print(f'姓名：{applicant.name}')
 print(f'身份：{'教师' if applicant.is_teacher else '学生'}')
@@ -137,18 +142,21 @@ class Applicant(info: str)
 
 申请人信息处理的核心类，用于存储和解析申请人信息。
 
-**参数**：
+**参数**
+
 - `info`: 原始申请信息字符串
 
-**主要方法**：
+**主要方法**
+
 - `parse()`: 解析申请信息，提取机构、姓名和身份
 
-**主要属性**：
-- `origin_info`: 原始申请信息
-- `institution`: 解析出的机构名称
-- `name`: 解析出的申请人姓名
-- `is_teacher`: 身份标识（True表示教师，False表示学生）
-- `full_info`: 格式化后的完整信息
+**主要属性**
+
+- info: 原始申请信息字符串
+- split_result: 对清理后的信息进行分词后的结果列表
+- institution: 识别出的机构名称
+- name: 识别出的申请人姓名
+- is_teacher: 身份标识，True表示教师，False表示学生（默认值）
 
 ### update_jieba_keywords() 函数
 
