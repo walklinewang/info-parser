@@ -6,7 +6,7 @@ Copyright © 2025 Walkline Wang <walkline@gmail.com>
 import json
 import tkinter as tk
 from pathlib import Path
-from tkinter import messagebox, ttk, scrolledtext
+from tkinter import messagebox, scrolledtext, ttk
 from typing import List
 
 from iparser.__init__ import __version__
