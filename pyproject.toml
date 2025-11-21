@@ -56,3 +56,12 @@ max-line-length = 88
 
 [tool.pylint.reports]
 output-format = "colorized"
+
+[tool.isort]
+src_paths = ["iparser", "tests", 'tools']
+extend_skip = ["utils.py"]
+indent = "\t"
+line_length = 88
+color_output = true
+lines_after_imports = 2
+multi_line_output = 5 # Hanging Grid Grouped
