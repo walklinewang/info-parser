@@ -102,11 +102,11 @@ def samples_without_secondary_college() -> List[Dict[str, Any]]:
 		{'input': '天津理工大学计算机科学与工程学院江小白学生', 'expected': {
 			'institution': '天津理工大学', 'name': '江小白', 'is_teacher': False}},	
 		{'input': '商丘学院应用科技学院李金灿', 'expected': {
-			'institution': '商丘学院应用科技学院', 'name': '李金灿', 'is_teacher': False}},
+			'institution': '商丘学院', 'name': '李金灿', 'is_teacher': False}},
 		{'input': '长春大学旅游学院 刘诗诗教师', 'expected': {
-			'institution': '长春大学旅游学院', 'name': '刘诗诗', 'is_teacher': True}},
+			'institution': '长春大学', 'name': '刘诗诗', 'is_teacher': True}},
 		{'input': '武汉大学-计算机学院-软件工程系-赵六', 'expected': {
-			'institution': '武汉大学计算机学院软件工程系', 'name': '赵六', 'is_teacher': False}},
+			'institution': '武汉大学', 'name': '赵六', 'is_teacher': False}},
 	]
 
 @pytest.fixture
